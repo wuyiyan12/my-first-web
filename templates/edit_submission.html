@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}编辑记录 - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="edit-form">
+    <h2>{{ page_title }}</h2>
+    
+    <form method="POST">
+        <!-- 与contact表单结构类似，但value值从submission对象读取 -->
+        <div class="form-group">
+            <label for="name">姓名：</label>
+            <input type="text" id="name" name="name" value="{{ submission.name }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">邮箱：</label>
+            <input type="email" id="email" name="email" value="{{ submission.email }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="category">咨询类型：</label>
+            <select id="category" name="category">
+                <option value="general" {% if submission.category == 'general' %}selected{% endif %}>一般咨询</option>
+                <option value="technical" {% if submission.category == 'technical' %}selected{% endif %}>技术问题</option>
+                <option value="feedback" {% if submission.category == 'feedback' %}selected{% endif %}>反馈建议</option>
+                <option value="other" {% if submission.category == 'other' %}selected{% endif %}>其他</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="message">留言：</label>
+            <textarea id="message" name="message" rows="5" required>{{ submission.message }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="subscribe" value="yes" {% if submission.subscribe %}checked{% endif %}>
+                订阅项目更新通知
+            </label>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">保存更改</button>
+            <a href="{{ url_for('submissions') }}" class="btn btn-secondary">取消</a>
+            <a href="{{ url_for('delete_submission', id=submission.id) }}" 
+               class="btn btn-danger" 
+               onclick="return confirm('⚠️ 确定要删除这条记录吗？此操作不可撤销。');">删除记录</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

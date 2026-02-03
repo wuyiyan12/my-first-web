@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}关于我们 - {{ super() }}{% endblock %}
+
+{% block content %}
+    <h2>{{ page_title }}</h2>
+    <p>这个页面是为了展示<strong>同一个基础模板可以派生出无数风格一致但内容不同的页面</strong>。</p>
+
+    <p>我们使用了：</p>
+    <ul>
+        <li><strong>Flask</strong> 作为后端框架</li>
+        <li><strong>Jinja2</strong> 模板引擎实现继承</li>
+        <li><strong>原生CSS</strong> 进行样式设计</li>
+    </ul>
+
+    <div style="border: 1px dashed #ccc; padding: 1rem; margin: 1.5rem 0; border-radius: 5px;">
+        <p><strong>传递给此页面的动态消息是：</strong> “{{ dynamic_message }}”</p>
+    </div>
+
+    <p><a href="{{ url_for('home') }}">返回首页</a></p>
+{% endblock %}
+
+{# 演示如何添加页面特定的CSS #}
+{% block extra_css %}
+<style>
+    /* 仅关于页面有特殊列表样式 */
+    ul {
+        list-style-type: square;
+        color: #2c3e50;
+    }
+</style>
+{% endblock %}

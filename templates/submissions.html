@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}提交记录 - {{ super() }}{% endblock %}
+
+{% block content %}
+<h2>{{ page_title }}</h2>
+<p>{{ dynamic_message }}</p>
+
+{% if submissions %}
+    <div class="table-container">
+        <table class="submissions-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>姓名</th>
+                    <th>邮箱</th>
+                    <th>类型</th>
+                    <th>留言摘要</th>
+                    <th>订阅</th>
+                    <th>提交时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in submissions %}
+                <tr>
+                    <td>#{{ sub.id }}</td>
+                    <td>{{ sub.name }}</td>
+                    <td><code>{{ sub.email }}</code></td>
+                    <td>
+                        <span class="category-badge {{ sub.category }}">
+                            {% if sub.category == 'general' %}一般
+                            {% elif sub.category == 'technical' %}技术
+                            {% elif sub.category == 'feedback' %}反馈
+                            {% else %}其他
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td title="{{ sub.message }}">
+                        {{ sub.message[:50] }}{% if sub.message|length > 50 %}...{% endif %}
+                    </td>
+                    <td>{{ '✓' if sub.subscribe else '✗' }}</td>
+                    <td><small>{{ sub.submitted_at.strftime('%m-%d %H:%M') }}</small></td>
+                    <td>
+        <!-- 这是一个微型表单，点击按钮会提交POST请求到删除URL -->
+                        <form action="{{ url_for('delete_submission', id=sub.id) }}" method="POST" style="display: inline;">
+                            <button type="submit" 
+                            onclick="return confirm('确定要删除这条记录吗？');" 
+                            style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.9em;">
+                            删除
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <p>暂无提交记录。去<a href="{{ url_for('contact') }}">联系页面</a>提交第一条吧！</p>
+    </div>
+{% endif %}
+
+<p style="margin-top: 2rem;">
+    <a href="{{ url_for('contact') }}" class="btn">返回表单</a>
+    <a href="{{ url_for('home') }}" class="btn">返回首页</a>
+</p>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.table-container {
+    overflow-x: auto;
+    margin: 1.5rem 0;
+}
+.submissions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+.submissions-table th {
+    background-color: #2c3e50;
+    color: white;
+    padding: 0.75rem;
+    text-align: left;
+}
+.submissions-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #eee;
+}
+.submissions-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+.category-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+.category-badge.general { background: #e3f2fd; color: #1565c0; }
+.category-badge.technical { background: #f3e5f5; color: #7b1fa2; }
+.category-badge.feedback { background: #e8f5e9; color: #2e7d32; }
+.category-badge.other { background: #fff3e0; color: #ef6c00; }
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    color: #6c757d;
+}
+.btn {
+    display: inline-block;
+    padding: 0.6rem 1.5rem;
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-right: 1rem;
+}
+.btn:hover {
+    background: #5a6268;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}联系我们 - {{ super() }}{% endblock %}
+
+{% block content %}
+{% if submitted_info %}
+<div class="submitted-data">
+    <h3>您刚才提交的信息：</h3>
+    <table>
+        <tr><th>字段</th><th>值</th></tr>
+        <tr><td>姓名</td><td>{{ submitted_info.name }}</td></tr>
+        <tr><td>邮箱</td><td>{{ submitted_info.email }}</td></tr>
+        <tr><td>咨询类型</td><td>
+            {% if submitted_info.category == 'general' %}一般咨询
+            {% elif submitted_info.category == 'technical' %}技术问题
+            {% elif submitted_info.category == 'feedback' %}反馈建议
+            {% else %}其他
+            {% endif %}
+        </td></tr>
+        <tr><td>留言</td><td><pre>{{ submitted_info.message }}</pre></td></tr>
+        <tr><td>订阅更新</td><td>{{ '是' if submitted_info.subscribe else '否' }}</td></tr>
+    </table>
+</div>
+
+<style>
+.submitted-data {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+.submitted-data table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.submitted-data th, .submitted-data td {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+.submitted-data th {
+    background-color: #e9ecef;
+}
+.submitted-data pre {
+    white-space: pre-wrap;
+    margin: 0;
+}
+</style>
+{% endif %}
+
+<div class="contact-form">
+    <h2>{{ page_title }}</h2>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-success">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('contact') }}">
+        <!-- 必须的CSRF保护在实际项目中需要添加，此处为简化示例 -->
+        
+        <div class="form-group">
+            <label for="name">姓名：</label>
+            <input type="text" id="name" name="name" required 
+                   placeholder="请输入您的姓名">
+        </div>
+
+        <div class="form-group">
+            <label for="email">邮箱：</label>
+            <input type="email" id="email" name="email" required 
+                   placeholder="example@domain.com">
+        </div>
+
+        <div class="form-group">
+            <label for="category">咨询类型：</label>
+            <select id="category" name="category">
+                <option value="general">一般咨询</option>
+                <option value="technical">技术问题</option>
+                <option value="feedback">反馈建议</option>
+                <option value="other">其他</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="message">留言：</label>
+            <textarea id="message" name="message" rows="5" 
+                      placeholder="请详细描述您的问题或建议..." required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="subscribe" value="yes">
+                订阅项目更新通知
+            </label>
+        </div>
+
+        <button type="submit" class="submit-btn">提交信息</button>
+    </form>
+
+    <div class="form-note">
+        <p><small>提交后，您会看到刚才输入的信息显示在本页。</small></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .contact-form {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+    input[type="text"],
+    input[type="email"],
+    select,
+    textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: border 0.3s;
+    }
+    
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+    }
+    
+    .submit-btn {
+        background: linear-gradient(135deg, #2c3e50, #3498db);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        font-size: 1.1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: transform 0.2s, opacity 0.2s;
+    }
+    
+    .submit-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+    }
+    
+    .alert {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #28a745;
+    }
+    
+    .form-note {
+        margin-top: 2rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}

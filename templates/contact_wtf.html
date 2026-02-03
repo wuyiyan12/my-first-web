@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}联系我们 (升级版) - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="contact-form">
+    <h2>{{ page_title }}</h2>
+    <p class="form-intro">{{ dynamic_message }}</p>
+
+    {# 显示顶部的flash消息（如提交成功后的提示） #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {# 重点：使用Flask-WTF表单对象渲染 #}
+    <form method="POST" action="{{ url_for('contact') }}">
+        {{ form.hidden_tag() }}  {# 这个非常重要！它会自动生成一个包含CSRF令牌的隐藏字段，用于安全防护。 #}
+
+        <div class="form-group">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control", placeholder="请输入您的姓名") }}
+            {# 显示这个字段特有的错误信息 #}
+            {% if form.name.errors %}
+                <div class="error-feedback">
+                    {% for error in form.name.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control", placeholder="example@domain.com") }}
+            {% if form.email.errors %}
+                <div class="error-feedback">
+                    {% for error in form.email.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.category.label(class="form-label") }}
+            {{ form.category(class="form-control") }}
+        </div>
+
+        <div class="form-group">
+            {{ form.message.label(class="form-label") }}
+            {{ form.message(class="form-control", rows="4", placeholder="请详细描述您的问题或建议...") }}
+            {% if form.message.errors %}
+                <div class="error-feedback">
+                    {% for error in form.message.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group checkbox-group">
+            {{ form.subscribe() }}
+            {{ form.subscribe.label }}
+        </div>
+
+        <div class="form-group">
+            {{ form.submit(class="submit-btn") }}
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-intro {
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    /* 错误提示样式 */
+    .error-feedback {
+        color: #d9534f;
+        font-size: 0.9em;
+        margin-top: 0.25rem;
+    }
+    /* 表单验证失败时，为错误输入框添加红色边框 */
+    .form-control:invalid {
+        border-color: #d9534f;
+    }
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+    }
+    .checkbox-group label {
+        margin-left: 0.5rem;
+        margin-bottom: 0;
+        font-weight: normal;
+    }
+    .submit-btn {
+        background: linear-gradient(to right, #3498db, #2c3e50);
+        color: white;
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1.1rem;
+        cursor: pointer;
+    }
+    .submit-btn:hover {
+        opacity: 0.9;
+    }
+    /* Flash消息样式 */
+    .alert {
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+    }
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+</style>
+{% endblock %}

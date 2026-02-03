@@ -1,0 +1,31 @@
+{# 声明继承自 base.html #}
+{% extends "base.html" %}
+
+{# 覆盖标题块，为首页设置专属标题 #}
+{% block title %}欢迎首页 - {{ super() }}{% endblock %}
+
+{# 覆盖内容块，首页的独特内容写在这里 #}
+{% block content %}
+    <h2>{{ page_title }}</h2>
+    <p>欢迎来到我用 <strong>Python</strong> 和 <strong>Flask</strong> 构建的第一个网站！</p>
+
+    {# 保留你之前的智能判断逻辑 #}
+    {% if dynamic_message is string and dynamic_message %}
+    <div class="highlight" style="background-color: #e8f4fd; border-left-color: #2196F3; margin: 1.5rem 0;">
+        <p><strong>🎉 实时消息：</strong> {{ dynamic_message }}</p>
+    </div>
+    {% endif %}
+
+    <p>这个页面现在使用了<strong>模板继承</strong>。导航栏、页脚和整体样式都来自 <code>base.html</code>，我只需关注这里的内容。</p>
+
+    <p>你现在看到的时间是： <strong>{{ current_time }}</strong></p>
+    <p><a href="{{ url_for('about') }}" style="display: inline-block; padding: 0.5rem 1rem; background: #3498db; color: white; border-radius: 5px; text-decoration: none;">点此前往「关于」页面</a></p>
+
+    <h3 style="margin-top: 2rem;">近期学习主题</h3>
+    <ul>
+        <li>Python Flask 框架</li>
+        <li>Jinja2 模板引擎</li>
+        <li>HTML & CSS 基础</li>
+        <li>版本控制 (Git)</li>
+    </ul>
+{% endblock %}
