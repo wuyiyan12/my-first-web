@@ -216,6 +216,13 @@ with app.app_context():
     print("✅ 数据库表已就绪！")
 
 
-
+"""
 if __name__ == '__main__':
     app.run(debug=True) # 这行在本地运行，在服务器上会被忽略
+"""
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    # 开发环境用调试模式，生产环境关闭
+    debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug)
