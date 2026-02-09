@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}个人资料 - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <h2>{{ page_title }}</h2>
+    
+    <div class="profile-card">
+        <div class="profile-header">
+            <h3>{{ user.username }}</h3>
+            <p class="text-muted">{{ user.email }}</p>
+        </div>
+        
+        <div class="profile-stats">
+            <div class="stat-item">
+                <span class="stat-number">{{ submission_count }}</span>
+                <span class="stat-label">提交记录</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ user.member_since.strftime('%Y-%m-%d') if user.member_since else 'N/A' }}</span>
+                <span class="stat-label">注册日期</span>
+            </div>
+        </div>
+        
+        <div class="profile-actions">
+            <a href="{{ url_for('submissions') }}" class="btn btn-primary">
+                <i class="icon-list"></i> 查看我的记录
+            </a>
+            <!-- 未来可以添加更多功能，如修改密码 -->
+            <!-- <a href="#" class="btn btn-secondary">修改密码</a> -->
+        </div>
+    </div>
+    
+    <div class="profile-info">
+        <h4>关于此页面</h4>
+        <p>这是您的个人空间。在这里，您可以查看您的账户信息和活动统计。</p>
+        <p>未来，您可以在这里修改密码、更新头像或管理账户设置。</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+.profile-card {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+}
+.profile-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+.profile-header h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+.text-muted {
+    color: #7f8c8d;
+    margin-top: 0.5rem;
+}
+.profile-stats {
+    display: flex;
+    justify-content: space-around;
+    margin: 2rem 0;
+    padding: 1.5rem 0;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #3498db;
+}
+.stat-label {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+.profile-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+.profile-info {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #555;
+}
+.profile-info h4 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+</style>
+{% endblock %}

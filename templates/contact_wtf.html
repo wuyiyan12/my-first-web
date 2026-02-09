@@ -7,31 +7,38 @@
     <h2>{{ page_title }}</h2>
     <p class="form-intro">{{ dynamic_message }}</p>
 
-    {# 显示顶部的flash消息（如提交成功后的提示） #}
+    {# 新增：专门用于显示动态消息的容器 #}
+    <div id="form-messages" class="message-container" style="display: none;">
+        <!-- JavaScript将在这里插入消息 -->
+    </div>
+
+    {# 原有的Flash消息显示区域保持不变 #}
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
     {% endwith %}
 
+    {# 原有的表单开始 #}
+
     {# 重点：使用Flask-WTF表单对象渲染 #}
-    <form method="POST" action="{{ url_for('contact') }}">
-        {{ form.hidden_tag() }}  {# 这个非常重要！它会自动生成一个包含CSRF令牌的隐藏字段，用于安全防护。 #}
+    <form id="contact-form" method="POST" action="{{ url_for('contact') }}">
+        {{ form.hidden_tag() }} {# 这个非常重要！它会自动生成一个包含CSRF令牌的隐藏字段，用于安全防护。 #}
 
         <div class="form-group">
             {{ form.name.label(class="form-label") }}
             {{ form.name(class="form-control", placeholder="请输入您的姓名") }}
             {# 显示这个字段特有的错误信息 #}
             {% if form.name.errors %}
-                <div class="error-feedback">
-                    {% for error in form.name.errors %}
-                        <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
+            <div class="error-feedback">
+                {% for error in form.name.errors %}
+                <span>{{ error }}</span>
+                {% endfor %}
+            </div>
             {% endif %}
         </div>
 
@@ -39,11 +46,11 @@
             {{ form.email.label(class="form-label") }}
             {{ form.email(class="form-control", placeholder="example@domain.com") }}
             {% if form.email.errors %}
-                <div class="error-feedback">
-                    {% for error in form.email.errors %}
-                        <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
+            <div class="error-feedback">
+                {% for error in form.email.errors %}
+                <span>{{ error }}</span>
+                {% endfor %}
+            </div>
             {% endif %}
         </div>
 
@@ -56,11 +63,11 @@
             {{ form.message.label(class="form-label") }}
             {{ form.message(class="form-control", rows="4", placeholder="请详细描述您的问题或建议...") }}
             {% if form.message.errors %}
-                <div class="error-feedback">
-                    {% for error in form.message.errors %}
-                        <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
+            <div class="error-feedback">
+                {% for error in form.message.errors %}
+                <span>{{ error }}</span>
+                {% endfor %}
+            </div>
             {% endif %}
         </div>
 
@@ -70,7 +77,12 @@
         </div>
 
         <div class="form-group">
-            {{ form.submit(class="submit-btn") }}
+            <button type="submit" id="submit-btn" class="submit-btn">
+                提交信息
+            </button>
+            <div id="loading-spinner" class="loading-spinner" style="display: none;">
+                正在提交...
+            </div>
         </div>
     </form>
 </div>
@@ -82,15 +94,18 @@
         color: #666;
         margin-bottom: 1.5rem;
     }
+
     .form-group {
         margin-bottom: 1.5rem;
     }
+
     .form-label {
         display: block;
         margin-bottom: 0.5rem;
         font-weight: 600;
         color: #2c3e50;
     }
+
     .form-control {
         width: 100%;
         padding: 0.75rem;
@@ -98,25 +113,30 @@
         border-radius: 4px;
         font-size: 1rem;
     }
+
     /* 错误提示样式 */
     .error-feedback {
         color: #d9534f;
         font-size: 0.9em;
         margin-top: 0.25rem;
     }
+
     /* 表单验证失败时，为错误输入框添加红色边框 */
     .form-control:invalid {
         border-color: #d9534f;
     }
+
     .checkbox-group {
         display: flex;
         align-items: center;
     }
+
     .checkbox-group label {
         margin-left: 0.5rem;
         margin-bottom: 0;
         font-weight: normal;
     }
+
     .submit-btn {
         background: linear-gradient(to right, #3498db, #2c3e50);
         color: white;
@@ -126,19 +146,292 @@
         font-size: 1.1rem;
         cursor: pointer;
     }
+
     .submit-btn:hover {
         opacity: 0.9;
     }
+
     /* Flash消息样式 */
     .alert {
         padding: 1rem;
         border-radius: 4px;
         margin-bottom: 1.5rem;
     }
+
     .alert-success {
         background-color: #d4edda;
         color: #155724;
         border: 1px solid #c3e6cb;
     }
+
+    /* 消息容器样式 */
+    .message-container {
+        margin-bottom: 1.5rem;
+    }
+
+    /* 动态消息样式 */
+    .alert {
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+        transition: opacity 0.5s ease;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .alert-info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+
+    /* 加载中 spinner 样式 */
+    .loading-spinner {
+        display: inline-block;
+        margin-left: 1rem;
+        color: #3498db;
+        font-size: 0.9rem;
+    }
+
+    /* 禁用按钮样式 */
+    .submit-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 </style>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- 引入API客户端 -->
+<script src="{{ url_for('static', filename='js/apiClient.js') }}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 现在可以使用 ApiClient 代替原生的 fetch
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+
+            // 使用 ApiClient
+            const result = await ApiClient.createSubmission(formData);
+
+            if (result.ok && result.data.status === 'success') {
+                // 处理成功...
+            } else {
+                // 处理错误...
+            }
+        }
+    });
+</script>
+
+
+
+<script>
+    // 当页面完全加载后执行
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('contact_wtf: DOMContentLoaded');
+        const form = document.getElementById('contact-form');
+        const messageContainer = document.getElementById('form-messages');
+        const submitBtn = document.getElementById('submit-btn');
+        const loadingSpinner = document.getElementById('loading-spinner');
+
+        // 监听表单提交事件
+        form.addEventListener('submit', async function (event) {
+            // 1. 阻止表单的默认提交行为（页面刷新）
+            event.preventDefault();
+
+            // 2. 禁用提交按钮，显示加载中状态
+            submitBtn.disabled = true;
+            loadingSpinner.style.display = 'block';
+            submitBtn.textContent = '提交中...';
+
+            // 3. 清除之前的消息
+            clearMessages();
+
+            // 4. 收集表单数据
+            const formData = new FormData(form);
+            // 将FormData转换为普通对象
+            const data = {};
+            formData.forEach((value, key) => {
+                // 处理复选框
+                if (key === 'subscribe') {
+                    data[key] = value === 'on'; // 将 'on' 转换为布尔值
+                } else {
+                    data[key] = value;
+                }
+            });
+
+            console.log('contact_wtf: submitting', data);
+            try {
+                // 5. 发送Fetch请求到API
+                const response = await fetch('/api/submission', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                console.log('contact_wtf: fetch response', response.status, result);
+
+                // 6. 处理响应
+                if (response.ok && result.status === 'success') {
+                    // 成功：显示成功消息
+                    showMessage('success', result.message);
+
+                    // 可选：在消息中显示创建的数据详情
+                    const detailMsg = `记录ID: ${result.data.id}，类型: ${result.data.category}，摘要: ${result.data.message}`;
+                    showMessage('info', detailMsg);
+
+                    // 清空表单（重置）
+                    form.reset();
+                } else {
+                    // 失败：显示错误消息
+                    showMessage('error', result.message || '提交失败，请稍后重试。');
+                }
+            } catch (error) {
+                // 网络错误或其他异常
+                console.error('提交出错:', error);
+                showMessage('error', '网络错误，请检查连接后重试。');
+            } finally {
+                // 7. 恢复按钮状态
+                submitBtn.disabled = false;
+                loadingSpinner.style.display = 'none';
+                submitBtn.textContent = '提交信息';
+            }
+        });
+
+        // 显示消息的函数
+        function showMessage(type, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `alert alert-${type}`;
+            messageDiv.textContent = text;
+            messageContainer.appendChild(messageDiv);
+            messageContainer.style.display = 'block';
+
+            // 如果是成功消息，5秒后自动淡出
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageDiv.style.opacity = '0';
+                    setTimeout(() => {
+                        if (messageDiv.parentNode === messageContainer) {
+                            messageContainer.removeChild(messageDiv);
+                        }
+                        if (messageContainer.children.length === 0) {
+                            messageContainer.style.display = 'none';
+                        }
+                    }, 500);
+                }, 5000);
+            }
+        }
+
+        // 清除所有消息的函数
+        function clearMessages() {
+            messageContainer.innerHTML = '';
+            messageContainer.style.display = 'none';
+        }
+    });
+
+    // 表单字段实时验证
+    const formFields = {
+        name: { min: 2, max: 100 },
+        email: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
+        message: { min: 10, max: 1000 }
+    };
+
+    // 为每个字段添加输入监听
+    // 为每个字段添加输入监听（修复：添加form存在检查）
+    if (form) {  // 添加这个检查
+        Object.keys(formFields).forEach(fieldName => {
+            const field = form.querySelector(`[name="${fieldName}"]`);
+            if (field) {
+                field.addEventListener('input', function () {
+                    validateField(this);
+                });
+                field.addEventListener('blur', function () {
+                    validateField(this, true);
+                });
+            }
+        });
+    }
+
+    // 字段验证函数
+    function validateField(field, showError = false) {
+        const rules = formFields[field.name];
+        const value = field.value.trim();
+        const errorElement = field.parentElement.querySelector('.field-error') ||
+            createErrorElement(field);
+
+        // 清除之前的错误状态
+        field.classList.remove('field-error-border');
+        errorElement.textContent = '';
+
+        // 验证规则
+        if (rules.required && !value) {
+            if (showError) setFieldError(field, errorElement, '此字段为必填项');
+            return false;
+        }
+
+        if (rules.min && value.length < rules.min) {
+            if (showError) setFieldError(field, errorElement, `至少需要 ${rules.min} 个字符`);
+            return false;
+        }
+
+        if (rules.max && value.length > rules.max) {
+            setFieldError(field, errorElement, `不能超过 ${rules.max} 个字符`);
+            return false;
+        }
+
+        if (rules.pattern && !rules.pattern.test(value)) {
+            if (showError) setFieldError(field, errorElement, '格式无效');
+            return false;
+        }
+
+        // 验证通过
+        field.classList.add('field-valid');
+        return true;
+    }
+
+    // 设置字段错误状态
+    function setFieldError(field, errorElement, message) {
+        field.classList.remove('field-valid');
+        field.classList.add('field-error-border');
+        errorElement.textContent = message;
+    }
+
+    // 创建错误显示元素
+    function createErrorElement(field) {
+        const errorEl = document.createElement('div');
+        errorEl.className = 'field-error';
+        field.parentElement.appendChild(errorEl);
+        return errorEl;
+    }
+
+    // 提交前的整体验证
+    function validateForm() {
+        let isValid = true;
+        Object.keys(formFields).forEach(fieldName => {
+            const field = form.querySelector(`[name="${fieldName}"]`);
+            if (field && !validateField(field, true)) {
+                isValid = false;
+            }
+        });
+        return isValid;
+    }
+
+
+</script>
+
+
 {% endblock %}

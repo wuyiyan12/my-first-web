@@ -3,11 +3,26 @@
 {% block title %}提交记录 - {{ super() }}{% endblock %}
 
 {% block content %}
-<h2>{{ page_title }}</h2>
-<p>{{ dynamic_message }}</p>
+<div class="submissions-container">
+    <h2>{{ page_title }}</h2>
 
-{% if submissions %}
-    <div class="table-container">
+    <!-- 动态消息容器（用于显示加载状态、错误信息等） -->
+    <div id="messages" class="message-container" style="display: none;"></div>
+
+    <!-- 加载中的占位符 -->
+    <div id="loading-state" class="loading-placeholder">
+        <div class="spinner"></div>
+        <p>正在加载您的记录...</p>
+    </div>
+
+    <!-- 空状态提示（当没有记录时显示） -->
+    <div id="empty-state" class="empty-state" style="display: none;">
+        <p>📭 您还没有任何提交记录。</p>
+        <p><a href="{{ url_for('contact') }}">去创建第一条记录</a></p>
+    </div>
+
+    <!-- 表格容器，数据将动态插入到这里 -->
+    <div id="table-container" class="table-container" style="display: none;">
         <table class="submissions-table">
             <thead>
                 <tr>
@@ -21,106 +36,428 @@
                     <th>操作</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for sub in submissions %}
-                <tr>
-                    <td>#{{ sub.id }}</td>
-                    <td>{{ sub.name }}</td>
-                    <td><code>{{ sub.email }}</code></td>
-                    <td>
-                        <span class="category-badge {{ sub.category }}">
-                            {% if sub.category == 'general' %}一般
-                            {% elif sub.category == 'technical' %}技术
-                            {% elif sub.category == 'feedback' %}反馈
-                            {% else %}其他
-                            {% endif %}
-                        </span>
-                    </td>
-                    <td title="{{ sub.message }}">
-                        {{ sub.message[:50] }}{% if sub.message|length > 50 %}...{% endif %}
-                    </td>
-                    <td>{{ '✓' if sub.subscribe else '✗' }}</td>
-                    <td><small>{{ sub.submitted_at.strftime('%m-%d %H:%M') }}</small></td>
-                    <td>
-        <!-- 这是一个微型表单，点击按钮会提交POST请求到删除URL -->
-                        <form action="{{ url_for('delete_submission', id=sub.id) }}" method="POST" style="display: inline;">
-                            <button type="submit" 
-                            onclick="return confirm('确定要删除这条记录吗？');" 
-                            style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.9em;">
-                            删除
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
+            <tbody id="submissions-tbody">
+                <!-- 记录行将通过JavaScript动态插入到这里 -->
             </tbody>
         </table>
     </div>
-{% else %}
-    <div class="empty-state">
-        <p>暂无提交记录。去<a href="{{ url_for('contact') }}">联系页面</a>提交第一条吧！</p>
-    </div>
-{% endif %}
 
-<p style="margin-top: 2rem;">
-    <a href="{{ url_for('contact') }}" class="btn">返回表单</a>
-    <a href="{{ url_for('home') }}" class="btn">返回首页</a>
-</p>
+    <div class="page-actions">
+        <a href="{{ url_for('contact') }}" class="btn btn-primary">➕ 创建新记录</a>
+        <button id="refresh-btn" class="btn btn-secondary" title="刷新列表">
+            🔄 刷新
+        </button>
+    </div>
+</div>
 {% endblock %}
+
+
 
 {% block extra_css %}
 <style>
-.table-container {
-    overflow-x: auto;
-    margin: 1.5rem 0;
-}
-.submissions-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.95rem;
-}
-.submissions-table th {
-    background-color: #2c3e50;
-    color: white;
-    padding: 0.75rem;
-    text-align: left;
-}
-.submissions-table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid #eee;
-}
-.submissions-table tbody tr:hover {
-    background-color: #f8f9fa;
-}
-.category-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
-}
-.category-badge.general { background: #e3f2fd; color: #1565c0; }
-.category-badge.technical { background: #f3e5f5; color: #7b1fa2; }
-.category-badge.feedback { background: #e8f5e9; color: #2e7d32; }
-.category-badge.other { background: #fff3e0; color: #ef6c00; }
-.empty-state {
-    text-align: center;
-    padding: 3rem;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    color: #6c757d;
-}
-.btn {
-    display: inline-block;
-    padding: 0.6rem 1.5rem;
-    background: #6c757d;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    margin-right: 1rem;
-}
-.btn:hover {
-    background: #5a6268;
-}
+    /* 加载状态样式 */
+    .loading-placeholder {
+        text-align: center;
+        padding: 3rem;
+        color: #7f8c8d;
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* 空状态提示 */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        color: #6c757d;
+    }
+
+    .empty-state a {
+        color: #3498db;
+    }
+
+    /* 表格容器 */
+    .table-container {
+        margin: 1.5rem 0;
+        overflow-x: auto;
+    }
+
+    /* 操作按钮 */
+    .page-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn {
+        padding: 0.6rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-danger {
+        background-color: #e74c3c;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    /* 消息样式（复用阶段A的） */
+    .message-container {
+        margin-bottom: 1.5rem;
+    }
+
+    .alert {
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    /* 撤销按钮样式 */
+    .btn-warning {
+        background-color: #ffc107;
+        color: #212529;
+        border: none;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.9rem;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn-warning:hover {
+        background-color: #e0a800;
+    }
+
+    /* 信息通知样式 */
+    .notification-info {
+        background-color: #17a2b8;
+        border-left: 4px solid #138496;
+    }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- 引入API客户端 -->
+<script src="{{ url_for('static', filename='js/apiClient.js') }}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 现在可以使用 ApiClient 代替原生的 fetch
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+
+            // 使用 ApiClient
+            const result = await ApiClient.createSubmission(formData);
+
+            if (result.ok && result.data.status === 'success') {
+                // 处理成功...
+            } else {
+                // 处理错误...
+            }
+        }
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tbody = document.getElementById('submissions-tbody');
+        const tableContainer = document.getElementById('table-container');
+        const loadingState = document.getElementById('loading-state');
+        const emptyState = document.getElementById('empty-state');
+        const messagesContainer = document.getElementById('messages');
+        const refreshBtn = document.getElementById('refresh-btn');
+
+        // 页面加载时自动获取数据
+        loadSubmissions();
+
+        // 点击刷新按钮重新加载
+        refreshBtn.addEventListener('click', loadSubmissions);
+
+        // 主函数：加载提交记录
+        async function loadSubmissions() {
+            showLoading();
+            clearMessages();
+
+            try {
+                const response = await fetch('/api/submissions');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP错误! 状态码: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    renderSubmissions(result.data);
+                    showMessage('success', `成功加载 ${result.count} 条记录`);
+                } else {
+                    throw new Error(result.message || '加载失败');
+                }
+            } catch (error) {
+                console.error('加载记录失败:', error);
+                showMessage('error', `加载失败: ${error.message}`);
+                showEmptyState();
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // 渲染记录到表格
+        function renderSubmissions(submissions) {
+            // 清空现有行
+            tbody.innerHTML = '';
+
+            if (submissions.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            // 为每条记录创建表格行
+            submissions.forEach(sub => {
+                const row = document.createElement('tr');
+
+                // 格式化日期
+                const submittedDate = new Date(sub.submitted_at);
+                const formattedDate = submittedDate.toLocaleDateString('zh-CN') + ' ' +
+                    submittedDate.toLocaleTimeString('zh-CN', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                // 创建行内容
+                row.innerHTML = `
+                <td>#${sub.id}</td>
+                <td>${escapeHtml(sub.name)}</td>
+                <td><code>${escapeHtml(sub.email)}</code></td>
+                <td><span class="category-badge ${sub.category}">${getCategoryText(sub.category)}</span></td>
+                <td title="${escapeHtml(sub.message)}">${truncateText(sub.message, 50)}</td>
+                <td>${sub.subscribe ? '✓' : '✗'}</td>
+                <td><small>${formattedDate}</small></td>
+                <td class="actions">
+                    <button class="btn-danger delete-btn" data-id="${sub.id}" 
+                            onclick="deleteSubmission(${sub.id}, this)">
+                        删除
+                    </button>
+                </td>
+            `;
+
+                tbody.appendChild(row);
+            });
+
+            // 显示表格，隐藏空状态
+            tableContainer.style.display = 'block';
+            emptyState.style.display = 'none';
+        }
+
+        // 全局删除函数（因为需要在动态生成的按钮上使用）
+        window.deleteSubmission = async function (id, buttonElement) {
+            const row = buttonElement.closest('tr');
+            const rowData = {
+                id: id,
+                html: row.innerHTML,
+                element: row
+            };
+
+            // 临时隐藏行（而不是立即删除）
+            row.style.opacity = '0.5';
+            row.style.backgroundColor = '#fff3cd';
+
+            // 创建撤销按钮
+            const undoButton = document.createElement('button');
+            undoButton.className = 'btn-warning undo-btn';
+            undoButton.innerHTML = '↶ 撤销删除';
+            undoButton.style.marginLeft = '0.5rem';
+
+            // 替换原始删除按钮
+            const actionsCell = buttonElement.parentElement;
+            actionsCell.innerHTML = '';
+            actionsCell.appendChild(undoButton);
+
+            // 设置撤销超时（7秒后真正删除）
+            const undoTimeout = setTimeout(() => {
+                performDelete(id, row);
+            }, 7000);
+
+            // 撤销按钮事件
+            undoButton.onclick = function () {
+                clearTimeout(undoTimeout);
+
+                // 恢复行
+                row.style.opacity = '1';
+                row.style.backgroundColor = '';
+                row.innerHTML = rowData.html;
+
+                // 重新绑定删除事件到恢复的按钮
+                const newDeleteBtn = row.querySelector('.delete-btn');
+                if (newDeleteBtn) {
+                    newDeleteBtn.onclick = function () {
+                        deleteSubmission(id, newDeleteBtn);
+                    };
+                }
+
+                ErrorHandler.showSuccess('删除已取消');
+            };
+
+            // 显示撤销提示
+            const message = `记录 #${id} 已标记删除。7秒后生效。`;
+            ErrorHandler.showInfo(message, 7000);
+        };
+
+        // 实际执行删除的函数
+        async function performDelete(id, row) {
+            try {
+                const result = await ApiClient.deleteSubmission(id);
+
+                if (result.ok && result.data.status === 'success') {
+                    // 平滑删除动画
+                    row.style.transition = 'all 0.3s ease';
+                    row.style.height = row.offsetHeight + 'px';
+
+                    setTimeout(() => {
+                        row.style.height = '0';
+                        row.style.opacity = '0';
+                        row.style.padding = '0';
+                        row.style.margin = '0';
+                        row.style.border = 'none';
+                    }, 10);
+
+                    setTimeout(() => {
+                        if (row.parentNode) {
+                            row.parentNode.removeChild(row);
+                        }
+
+                        // 检查是否还有记录
+                        if (tbody.children.length === 0) {
+                            showEmptyState();
+                        }
+                    }, 400);
+
+                    ErrorHandler.showSuccess(result.data.message);
+                } else {
+                    throw new Error(ErrorHandler.getFriendlyMessage(result));
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+                ErrorHandler.showError(`删除失败: ${error.message}`);
+
+                // 恢复行
+                row.style.opacity = '1';
+                row.style.backgroundColor = '';
+            }
+        };
+
+        // 工具函数：显示加载状态
+        function showLoading() {
+            loadingState.style.display = 'block';
+            tableContainer.style.display = 'none';
+            emptyState.style.display = 'none';
+        }
+
+        function hideLoading() {
+            loadingState.style.display = 'none';
+        }
+
+        // 工具函数：显示空状态
+        function showEmptyState() {
+            tableContainer.style.display = 'none';
+            emptyState.style.display = 'block';
+        }
+
+        // 工具函数：显示消息
+        function showMessage(type, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `alert alert-${type}`;
+            messageDiv.textContent = text;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.style.display = 'block';
+
+            // 5秒后自动移除（成功消息）
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageDiv.remove();
+                    if (messagesContainer.children.length === 0) {
+                        messagesContainer.style.display = 'none';
+                    }
+                }, 5000);
+            }
+        }
+
+        function clearMessages() {
+            messagesContainer.innerHTML = '';
+            messagesContainer.style.display = 'none';
+        }
+
+        // 工具函数：截断文本
+        function truncateText(text, maxLength) {
+            if (text.length <= maxLength) return escapeHtml(text);
+            return escapeHtml(text.substring(0, maxLength)) + '...';
+        }
+
+        // 工具函数：HTML转义（防止XSS）
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 工具函数：获取类型文本
+        function getCategoryText(category) {
+            const map = {
+                'general': '一般',
+                'technical': '技术',
+                'feedback': '反馈',
+                'other': '其他'
+            };
+            return map[category] || category;
+        }
+    });
+</script>
 {% endblock %}

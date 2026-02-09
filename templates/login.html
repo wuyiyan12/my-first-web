@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}登录 - {{ super() }}{% endblock %}
+{% block content %}
+<div class="auth-form">
+    <h2>{{ page_title }}</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        {% for field in [form.email, form.password] %}
+        <div class="form-group">
+            {{ field.label(class="form-label") }}
+            {{ field(class="form-control") }}
+            {% if field.errors %}
+                <div class="error-feedback">
+                    {% for error in field.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <div class="form-group form-check">
+            {{ form.remember_me(class="form-check-input") }}
+            {{ form.remember_me.label(class="form-check-label") }}
+        </div>
+        {{ form.submit(class="btn btn-primary btn-block") }}
+    </form>
+    <hr>
+    <p class="text-center">新用户？ <a href="{{ url_for('register') }}">点此注册</a></p>
+</div>
+{% endblock %}

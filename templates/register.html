@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}注册 - {{ super() }}{% endblock %}
+{% block content %}
+<div class="auth-form">
+    <h2>{{ page_title }}</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        {% for field in [form.username, form.email, form.password, form.password2] %}
+        <div class="form-group">
+            {{ field.label(class="form-label") }}
+            {{ field(class="form-control") }}
+            {% if field.errors %}
+                <div class="error-feedback">
+                    {% for error in field.errors %}
+                        <span>{{ error }}</span><br>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {{ form.submit(class="btn btn-primary btn-block") }}
+    </form>
+    <hr>
+    <p class="text-center">已有账户？ <a href="{{ url_for('login') }}">点此登录</a></p>
+</div>
+{% endblock %}
